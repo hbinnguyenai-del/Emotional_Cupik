@@ -1,0 +1,7 @@
+{
+  "name": "Emotional Eyes",
+  "description": "A robot face with eyes that react to music and sound in real-time.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

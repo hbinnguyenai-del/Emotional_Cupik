@@ -1,0 +1,6 @@
+{
+  "appId": "com.emotionaleyes.app",
+  "appName": "Emotional Eyes",
+  "webDir": "dist",
+  "bundledWebRuntime": false
+}
