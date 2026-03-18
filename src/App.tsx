@@ -4,8 +4,8 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { motion } from 'motion/react';
-import { Mic, MicOff, Play, Pause, RotateCcw, Coffee, Brain, Timer, Smile, Zap, Moon, Frown, Flame, Music, Sparkles, Heart, Star, Droplet } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Mic, MicOff, Play, Pause, RotateCcw, Coffee, Brain, Timer, Smile, Zap, Moon, Frown, Flame, Music, Sparkles, Heart, Star, Droplet, Eye as EyeIcon, EyeOff as EyeOffIcon, Settings, X } from 'lucide-react';
 import { useAudioAnalyzer } from './hooks/useAudioAnalyzer';
 import { analyzeAudioMood, AIMood } from './services/geminiService';
 
@@ -18,6 +18,8 @@ export default function App() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiMood, setAiMood] = useState<AIMood | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [showStatus, setShowStatus] = useState(true);
+  const [showSettings, setShowSettings] = useState(false);
   const isAnalyzingRef = useRef(false);
 
   useEffect(() => {
@@ -240,18 +242,103 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center relative overflow-hidden selection:bg-transparent p-4">
       
-      {/* View Toggle Button */}
+      {/* Settings Toggle Button */}
       <button 
-        onClick={() => setActiveView(v => v === 'face' ? 'pomodoro' : 'face')}
-        className="absolute top-6 left-6 z-50 p-4 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white rounded-full backdrop-blur-md transition-all border border-white/10"
-        title={activeView === 'face' ? "Switch to Pomodoro" : "Switch to Face"}
+        onClick={() => setShowSettings(!showSettings)}
+        className="absolute top-6 right-6 z-[100] p-4 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white rounded-full backdrop-blur-md transition-all border border-white/10 shadow-lg"
+        title="Settings"
       >
-        {activeView === 'face' ? <Timer size={24} /> : <Smile size={24} />}
+        {showSettings ? <X size={24} /> : <Settings size={24} />}
       </button>
+
+      {/* Settings Menu Overlay */}
+      <AnimatePresence>
+        {showSettings && (
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            className="absolute top-24 right-6 z-[90] w-72 bg-[#111]/90 backdrop-blur-2xl border border-white/10 rounded-[32px] p-6 shadow-2xl flex flex-col gap-6"
+          >
+            {/* View Toggle Section */}
+            <div className="flex flex-col gap-3">
+              <p className="text-xs font-bold text-white/30 uppercase tracking-widest px-2">View Mode</p>
+              <button 
+                onClick={() => setActiveView(v => v === 'face' ? 'pomodoro' : 'face')}
+                className="flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 text-white rounded-2xl transition-all border border-white/5 group"
+              >
+                <div className="p-2 bg-white/5 rounded-lg group-hover:bg-white/10">
+                  {activeView === 'face' ? <Timer size={20} /> : <Smile size={20} />}
+                </div>
+                <span className="font-medium">{activeView === 'face' ? "Switch to Pomodoro" : "Switch to Face"}</span>
+              </button>
+            </div>
+
+            {/* Mood Selector Section */}
+            {activeView === 'face' && (
+              <div className="flex flex-col gap-3">
+                <p className="text-xs font-bold text-white/30 uppercase tracking-widest px-2">Mood Personality</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {(['auto', 'happy', 'sleepy', 'angry', 'sad', 'ai'] as const).map(p => (
+                    <button
+                      key={p}
+                      onClick={() => setPersonality(p)}
+                      className={`flex flex-col items-center justify-center p-3 rounded-2xl transition-all border ${personality === p ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-400' : 'bg-white/5 border-white/5 text-white/50 hover:text-white/80 hover:bg-white/10'}`}
+                      title={p === 'ai' ? 'Analyze Music (AI)' : `Mood: ${p}`}
+                    >
+                      {p === 'auto' && <Zap size={20} />}
+                      {p === 'happy' && <Smile size={20} />}
+                      {p === 'sleepy' && <Moon size={20} />}
+                      {p === 'angry' && <Flame size={20} />}
+                      {p === 'sad' && <Frown size={20} />}
+                      {p === 'ai' && <Music size={20} />}
+                      <span className="text-[10px] mt-1 capitalize">{p}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Visibility Section */}
+            {activeView === 'face' && personality === 'ai' && (
+              <div className="flex flex-col gap-3">
+                <p className="text-xs font-bold text-white/30 uppercase tracking-widest px-2">Display</p>
+                <button 
+                  onClick={() => setShowStatus(!showStatus)}
+                  className="flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 text-white rounded-2xl transition-all border border-white/5 group"
+                >
+                  <div className="p-2 bg-white/5 rounded-lg group-hover:bg-white/10">
+                    {showStatus ? <EyeOffIcon size={20} /> : <EyeIcon size={20} />}
+                  </div>
+                  <span className="font-medium">{showStatus ? "Hide Status Details" : "Show Status Details"}</span>
+                </button>
+              </div>
+            )}
+
+            {/* Audio Control Section */}
+            <div className="flex flex-col gap-3">
+              <p className="text-xs font-bold text-white/30 uppercase tracking-widest px-2">Audio Input</p>
+              <button
+                onClick={isListening ? stopListening : startListening}
+                className={`flex items-center gap-4 p-4 rounded-2xl transition-all border ${
+                  isListening 
+                    ? 'bg-red-500/20 border-red-500/50 text-red-500' 
+                    : 'bg-white/5 border-white/5 text-white hover:bg-white/10'
+                }`}
+              >
+                <div className={`p-2 rounded-lg ${isListening ? 'bg-red-500/20' : 'bg-white/5'}`}>
+                  {isListening ? <MicOff size={20} /> : <Mic size={20} />}
+                </div>
+                <span className="font-medium">{isListening ? "Stop Listening" : "Start Listening"}</span>
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Error Banner */}
       {(micError || apiError) && (
-        <div className="absolute top-6 right-6 z-50 max-w-md bg-red-500/20 border border-red-500/50 text-red-200 px-4 py-3 rounded-xl backdrop-blur-md shadow-lg flex flex-col gap-1">
+        <div className="absolute top-6 left-6 z-50 max-w-md bg-red-500/20 border border-red-500/50 text-red-200 px-4 py-3 rounded-xl backdrop-blur-md shadow-lg flex flex-col gap-1">
           {micError && <p className="text-sm font-medium">{micError}</p>}
           {apiError && <p className="text-sm font-medium">{apiError}</p>}
         </div>
@@ -283,24 +370,27 @@ export default function App() {
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
       >
         {/* Display Panel (Above Head) */}
-        {personality === 'ai' && aiMood && aiMood.display_panel && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            key={aiMood.display_panel.text}
-            className="mb-8 bg-white/10 backdrop-blur-md border border-white/20 px-8 py-3 rounded-full text-center z-50 shadow-[0_0_30px_rgba(0,255,255,0.15)]"
-          >
-            <div className="flex items-center justify-center gap-2 text-white font-medium text-lg">
-              <Music size={18} className="text-cyan-400" />
-              {aiMood.display_panel.text}
-            </div>
-            {aiMood.music_identification?.song_title && aiMood.music_identification.song_title !== 'unknown' && (
-              <div className="text-sm text-white/60 mt-1">
-                {aiMood.music_identification.artist} • {aiMood.music_identification.genre}
+        <AnimatePresence>
+          {personality === 'ai' && aiMood && aiMood.display_panel && showStatus && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              key={aiMood.display_panel.text}
+              className="mb-8 bg-white/10 backdrop-blur-md border border-white/20 px-8 py-3 rounded-full text-center z-50 shadow-[0_0_30px_rgba(0,255,255,0.15)]"
+            >
+              <div className="flex items-center justify-center gap-2 text-white font-medium text-lg">
+                <Music size={18} className="text-cyan-400" />
+                {aiMood.display_panel.text}
               </div>
-            )}
-          </motion.div>
-        )}
+              {aiMood.music_identification?.song_title && aiMood.music_identification.song_title !== 'unknown' && (
+                <div className="text-sm text-white/60 mt-1">
+                  {aiMood.music_identification.artist} • {aiMood.music_identification.genre}
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Robot Face Container */}
         <div className="relative w-full max-w-4xl aspect-[2.2/1] bg-[#111] rounded-[60px] md:rounded-[100px] shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex items-center justify-center border-[8px] md:border-[16px] border-[#222] overflow-hidden">
@@ -338,76 +428,30 @@ export default function App() {
           <Mouth volume={audioData.volume} emotion={currentEmotion} aiMood={personality === 'ai' ? aiMood : null} />
         </div>
 
-        {/* Mood Selector */}
-        <div className="absolute top-6 right-6 flex flex-col items-center gap-2 bg-white/5 p-2 rounded-full backdrop-blur-md border border-white/10 z-50">
-          {(['auto', 'happy', 'sleepy', 'angry', 'sad', 'ai'] as const).map(p => (
-            <button
-              key={p}
-              onClick={() => setPersonality(p)}
-              className={`p-3 rounded-full transition-all relative ${personality === p ? 'bg-white/20 text-white' : 'text-white/50 hover:text-white/80 hover:bg-white/10'}`}
-              title={p === 'ai' ? 'Analyze Music (AI)' : `Mood: ${p}`}
-            >
-              {p === 'auto' && <Zap size={20} />}
-              {p === 'happy' && <Smile size={20} />}
-              {p === 'sleepy' && <Moon size={20} />}
-              {p === 'angry' && <Flame size={20} />}
-              {p === 'sad' && <Frown size={20} />}
-              {p === 'ai' && (
-                <>
-                  <Music size={20} />
-                  {isAnalyzing && (
-                    <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-3 w-3 bg-cyan-500"></span>
-                    </span>
-                  )}
-                </>
-              )}
-            </button>
-          ))}
-        </div>
-
         {/* AI Mood Description */}
-        {personality === 'ai' && aiMood && (
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="absolute bottom-36 left-1/2 -translate-x-1/2 bg-white/5 backdrop-blur-md border border-white/10 px-6 py-3 rounded-2xl text-center z-50 max-w-md"
-          >
-            <div className="flex items-center justify-center gap-2 text-cyan-300 font-semibold mb-1">
-              <Sparkles size={16} />
-              {aiMood.music_mood}
-            </div>
-            <p className="text-white/80 text-sm leading-tight mb-1">
-              {aiMood.reaction_description}
-            </p>
-            {aiMood.head_reaction_style && (
-              <p className="text-white/50 text-xs italic">
-                Style: {aiMood.head_reaction_style}
+        <AnimatePresence>
+          {personality === 'ai' && aiMood && showStatus && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              className="absolute bottom-12 left-1/2 -translate-x-1/2 bg-white/5 backdrop-blur-md border border-white/10 px-6 py-3 rounded-2xl text-center z-50 max-w-md"
+            >
+              <div className="flex items-center justify-center gap-2 text-cyan-300 font-semibold mb-1">
+                <Sparkles size={16} />
+                {aiMood.music_mood}
+              </div>
+              <p className="text-white/80 text-sm leading-tight mb-1">
+                {aiMood.reaction_description}
               </p>
-            )}
-          </motion.div>
-        )}
-
-        {/* Controls */}
-        <div className="absolute bottom-12 flex flex-col items-center gap-4">
-          <button
-            onClick={isListening ? stopListening : startListening}
-            className={`p-5 rounded-full transition-all duration-300 ${
-              isListening 
-                ? 'bg-red-500/20 text-red-500 hover:bg-red-500/30 shadow-[0_0_20px_rgba(239,68,68,0.3)]' 
-                : 'bg-white/10 text-white hover:bg-white/20'
-            }`}
-            title={isListening ? "Stop Listening" : "Start Listening"}
-          >
-            {isListening ? <MicOff size={28} /> : <Mic size={28} />}
-          </button>
-          {!isListening && (
-            <p className="text-white/50 text-sm font-medium tracking-widest uppercase">
-              Tap to listen
-            </p>
+              {aiMood.head_reaction_style && (
+                <p className="text-white/50 text-xs italic">
+                  Style: {aiMood.head_reaction_style}
+                </p>
+              )}
+            </motion.div>
           )}
-        </div>
+        </AnimatePresence>
       </motion.div>
     </div>
   );
